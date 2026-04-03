@@ -15,6 +15,7 @@ def fetch_html(url: str) -> str:
     response = requests.get(url)
     if response.status_code == 200:
         logger.info(f'Получена разметка сайта {url}')
+        response.encoding = 'utf-8'
         return response.text
     logger.error(f'Получена ошибка {response.status_code} при обращении к сайту {url}')
     logger.debug(f'Текст ошибки: {response.text}')
@@ -56,8 +57,6 @@ def clean_data(raw_data: list) -> pd.DataFrame:
     logger.info('Начался процесс очистки данных')
     columns = ['rank', 'artist_name', 'track_title', 'days_on_chart', 'top_10_days', 'peak_position', 'peak_occurrence', 'peak_streams', 'total_streams']
     df = pd.DataFrame(raw_data, columns=columns).set_index('rank')
-    df['artist_name'] = df['artist_name'].str.encode('utf-8').str.decode('latin-1')
-    df['track_title'] = df['track_title'].str.encode('utf-8').str.decode('latin-1')
     df['days_on_chart'] = df['days_on_chart'].replace('', None).astype('Int64')
     df['top_10_days'] = df['top_10_days'].replace('', None).astype('Int64')
     df['peak_position'] = df['peak_position'].replace('', None).astype('Int64')

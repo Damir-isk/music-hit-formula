@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-RUN_SCRIPT = python3.14 -m venv .venv && source .venv/bin/activate && cd scripts && python3.14
+RUN_SCRIPT = source .venv/bin/activate && cd scripts && python3.14
 
 .PHONY: all
 all: venv data

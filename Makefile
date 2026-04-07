@@ -11,4 +11,4 @@ venv:
 
 .PHONY: data
 data:
-	$(RUN_SCRIPT) kworb_global_daily_totals.py
+	$(RUN_SCRIPT) spotify_daily_chart_totals.py

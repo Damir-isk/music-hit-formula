@@ -16,12 +16,14 @@ def cache_api(table: str):
             month = datetime.now().strftime('%Y-%m')
             with sqlite3.connect(self.db_path) as con:
                 cursor = con.execute(f'''
-                    SELECT response FROM {table} 
+                    SELECT timestamp, response FROM {table} 
                     WHERE identifier = ? AND timestamp LIKE ?
                 ''', (str(identifier), f'{month}%'))
                 cached = cursor.fetchone()
             if cached:
-                return json.loads(cached[0])
+                timestamp, response = cached[0], cached[1]
+                self.logger.info(f'Использован кэш для {table} с идентификатором {identifier} за {timestamp}') 
+                return json.loads(response)
             response = func(self, identifier, *args, **kwargs)
             with sqlite3.connect(self.db_path) as con:
                 con.execute(f'''
@@ -57,19 +59,21 @@ class Genius:
 
     @cache_api('searches')
     def search(self, query: str) -> str:
-        self.logger.info(f'Отпарвлен поисковый запрос: {query}')
+        self.logger.info(f'Отправлен поисковый запрос: {query}')
         response = self.session.get('https://api.genius.com/search', params={'q': query})
         response.raise_for_status()
         return response.text
-    
+       
     @cache_api('songs')
     def song(self, song_id: int) -> str:
+        self.logger.info(f'Получение данных песни с ID {song_id}') 
         response = self.session.get(f'https://api.genius.com/songs/{song_id}')
         response.raise_for_status()
         return response.text
     
     @cache_api('artists')
     def artist(self, artist_id: int) -> str:
+        self.logger.info(f'Получение данных артиста с ID {artist_id}')
         response = self.session.get(f'https://api.genius.com/artists/{artist_id}')
         response.raise_for_status()
         return response.text
@@ -80,6 +84,7 @@ class Genius:
         responses = []
         page = 1
         while page:
+            self.logger.info(f'Получение песен артиста {artist_id}, страница {page}')
             response = self.session.get(url, params={'sort': 'popularity', 'per_page': 50, 'page': page})
             response.raise_for_status()
             data = response.json()
@@ -93,6 +98,7 @@ class Genius:
         responses = []
         page = 1
         while page:
+            self.logger.info(f'Получение референтов для песни {song_id}, страница {page}')
             response = self.session.get(url, params={'song_id': song_id, 'text_format': 'plain', 'per_page': 50, 'page': page})
             response.raise_for_status()
             data = response.json()

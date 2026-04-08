@@ -10,4 +10,5 @@
 
 ## Используемые данные
 
-- [Агрегированные данные по ежедневным чартам Spotify](https://kworb.net/spotify/country/global_daily_totals.html)
+- [Kworb](https://kworb.net)
+- [Genius API](https://docs.genius.com/)

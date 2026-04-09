@@ -40,10 +40,17 @@ class Kworb:
             self.logger.info(f'Данные за {date} число получены из кэша')
             return cached.set_index('rank')
         now = datetime.now().strftime('%Y-%m-%d')
-        self.logger.info(f'Данных за {date} нет. Загрузка за {now}...')
+        self.logger.info(f'Данных за {date} нет. Берем данные за {now}...')
+        with sqlite3.connect(self.db_path) as con:
+            query = 'SELECT * FROM spotify_daily_totals WHERE date = ?'
+            cached = pd.read_sql_query(query, con, params=(now,))
+        if not cached.empty:
+            self.logger.info(f'Данные за {now} число получены из кэша')
+            return cached.set_index('rank')
         response = requests.get('https://kworb.net/spotify/country/global_daily_totals.html')
         response.raise_for_status()
         response.encoding = 'utf-8'
+        self.logger.info(f'Данные успешно получены')
         soup = BeautifulSoup(response.text, 'html.parser')
         body_rows = soup.find_all('tr')[1:]
         parsed_data = []
@@ -58,13 +65,13 @@ class Kworb:
             parsed_data.append([now, i, artist_name, track_title] + [x.text.strip() for x in cells[1:]])
         self.logger.info('Очистка данных...')
         df = pd.DataFrame(parsed_data, columns=list(dict(self.SCHEMA).keys())) 
-        for col, dtype in self.SCHEMA:
-            if dtype == 'INTEGER':
-                if col == 'peak_occurrence':
-                    df[col] = df[col].str.extract(r'\(x(\d+)\)').fillna(1)
-                if df[col].dtype == 'object':
-                    df[col] = df[col].str.replace(',', '')    
-                    df[col] = df[col].astype('Int64')
+        df['artist_name'] = df['artist_name'].str.strip()
+        df['track_title'] = df['track_title'].str.strip()
+        df['top_10_days'] = df['top_10_days'].replace('', 0).astype(int)
+        df['peak_occurrence'] = df['peak_occurrence'].str.extract(r'\(x(\d+)\)').fillna(1).astype(int)
+        df['peak_streams'] = df['peak_streams'].str.replace(',', '').astype(int)
+        df['total_streams'] = df['total_streams'].str.replace(',', '').astype(int)
+        self.logger.info('Сохранение данных...')
         with sqlite3.connect(self.db_path) as con:
             df.to_sql('spotify_daily_totals', con, if_exists='append', index=False)
         self.logger.info(f'Данные за {now} успешно сохранены')

@@ -40,8 +40,8 @@ class Genius:
         self.session = requests.Session()
         token = os.getenv('GENIUS_CLIENT_ACCESS_TOKEN')
         self.session.headers.update({'Authorization': f'Bearer {token}'})
-        os.makedirs('../data', exist_ok=True)
-        self.db_path = '../data/genius.db'
+        os.makedirs('../cache', exist_ok=True)
+        self.db_path = '../cache/genius.db'
         self._create_tables()
 
     def _create_tables(self):

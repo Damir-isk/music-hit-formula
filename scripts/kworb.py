@@ -22,8 +22,8 @@ class Kworb:
 
     def __init__(self):
         self.logger = get_logger(__name__)
-        os.makedirs('../data', exist_ok=True)
-        self.db_path = '../data/kworb.db'
+        os.makedirs('../cache', exist_ok=True)
+        self.db_path = '../cache/kworb.db'
         self._create_table()
 
     def _create_table(self):

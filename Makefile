@@ -9,10 +9,10 @@ venv:
 
 .PHONY: archive
 archive:
-	zip -rFS data.zip data
+	zip -rFS cache.zip cache
 	zip -rFS logs.zip logs
 
 .PHONY: unarchive
 unarchive:
-	unzip -o data.zip
+	unzip -o cache.zip
 	unzip -o logs.zip

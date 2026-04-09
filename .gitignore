@@ -6,5 +6,5 @@ scripts/__pycache__/
 .venv/
 .env
 
-data/
+cache/
 logs/

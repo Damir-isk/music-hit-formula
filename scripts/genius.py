@@ -66,7 +66,7 @@ class Genius:
     @cache_api('songs')
     def song(self, song_id: int) -> str:
         self.logger.info(f'Получение данных песни с ID {song_id}') 
-        response = self.session.get(f'https://api.genius.com/songs/{song_id}', headers=self.headers)
+        response = requests.get(f'https://api.genius.com/songs/{song_id}', headers=self.headers)
         response.raise_for_status()
         return response.text
     

@@ -11,7 +11,7 @@ from get_logger import get_logger
 
 load_dotenv()
 
-def cache(table: str):
+def cache(table: str, is_json: bool = True):
     def decorator(func):
         @wraps(func)
         def wrapper(self, identifier, *args, **kwargs):
@@ -25,14 +25,14 @@ def cache(table: str):
             if cached:
                 timestamp, response = cached[0], cached[1]
                 self.logger.info(f'Использован кэш для {table} с идентификатором {identifier} за {timestamp}') 
-                return json.loads(response)
+                return json.loads(response) if is_json else response
             response = func(self, identifier, *args, **kwargs)
             with sqlite3.connect(self.db_path) as con:
                 con.execute(f'''
                     INSERT INTO {table} (timestamp, identifier, response)
                     VALUES (?, ?, ?)
                 ''', (datetime.now().isoformat(), str(identifier), response))
-            return json.loads(response)
+            return json.loads(response) if is_json else response
         return wrapper
     return decorator
 
@@ -46,7 +46,7 @@ class Genius:
         self._create_tables()
 
     def _create_tables(self):
-        tables = ['searches', 'songs', 'artists', 'artist_songs', 'referents']
+        tables = ['searches', 'songs', 'artists', 'artist_songs', 'referents', 'lyrics']
         with sqlite3.connect(self.db_path) as con:
             for table in tables:
                 con.execute(f'''
@@ -111,7 +111,7 @@ class Genius:
             page += 1
         return json.dumps(responses)
 
-    @cache('lyrics')
+    @cache('lyrics', is_json=False)
     def lyrics(self, song_url: str) -> str:
         self.logger.info(f'Получение текста песни по ссылке {song_url}')
         response = requests.get(song_url)

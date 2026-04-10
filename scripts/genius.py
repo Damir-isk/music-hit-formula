@@ -1,15 +1,17 @@
 import os
+import re
 import json
 import sqlite3
 import requests
 from functools import wraps
 from datetime import datetime
+from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from get_logger import get_logger
 
 load_dotenv()
 
-def cache_api(table: str):
+def cache(table: str):
     def decorator(func):
         @wraps(func)
         def wrapper(self, identifier, *args, **kwargs):
@@ -56,28 +58,28 @@ class Genius:
                     )
                 ''')
 
-    @cache_api('searches')
+    @cache('searches')
     def search(self, query: str) -> str:
         self.logger.info(f'Отправлен поисковый запрос: {query}')
         response = requests.get('https://api.genius.com/search', params={'q': query}, headers=self.headers)
         response.raise_for_status()
         return response.text
        
-    @cache_api('songs')
+    @cache('songs')
     def song(self, song_id: int) -> str:
         self.logger.info(f'Получение данных песни с ID {song_id}') 
         response = requests.get(f'https://api.genius.com/songs/{song_id}', headers=self.headers)
         response.raise_for_status()
         return response.text
     
-    @cache_api('artists')
+    @cache('artists')
     def artist(self, artist_id: int) -> str:
         self.logger.info(f'Получение данных артиста с ID {artist_id}')
         response = requests.get(f'https://api.genius.com/artists/{artist_id}', headers=self.headers)
         response.raise_for_status()
         return response.text
     
-    @cache_api('artist_songs')
+    @cache('artist_songs')
     def artist_songs(self, artist_id: int) -> str:
         url = f'https://api.genius.com/artists/{artist_id}/songs'
         responses = []
@@ -93,7 +95,7 @@ class Genius:
             page = data['response'].get('next_page')
         return json.dumps(responses)
     
-    @cache_api('referents')
+    @cache('referents')
     def referents(self, song_id: int) -> str:
         url = 'https://api.genius.com/referents'
         responses = []
@@ -108,3 +110,17 @@ class Genius:
             responses.append(data)
             page += 1
         return json.dumps(responses)
+
+    @cache('lyrics')
+    def lyrics(self, song_url: str) -> str:
+        self.logger.info(f'Получение текста песни по ссылке {song_url}')
+        response = requests.get(song_url)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, 'html.parser')
+        containers = soup.find_all('div', attrs={'data-lyrics-container': 'true'})
+        lyrics = []
+        for container in containers:
+            for exclude in container.find_all(attrs={'data-exclude-from-selection': 'true'}):
+                exclude.decompose()
+            lyrics += [container.get_text(separator='\n', strip=True)]
+        return re.sub(r'\n{2,}', '\n', '\n'.join(lyrics))

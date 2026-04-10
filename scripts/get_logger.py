@@ -24,14 +24,14 @@ def get_logger(name: str) -> logging.Logger:
             },
             'file': {
                 'class': 'logging.FileHandler',
-                'level': 'INFO',
+                'level': 'DEBUG',
                 'formatter': 'main',
                 'filename': str(directory / f'{filename}.log'),
                 'encoding': 'utf8',
             },
         },
         'root': {
-            'handlers': ['console', 'file'],
+            'handlers': ['file'],
             'level': 'DEBUG',
         },
     }

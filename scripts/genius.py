@@ -87,6 +87,8 @@ class Genius:
             response = requests.get(url, params={'sort': 'popularity', 'per_page': 50, 'page': page}, headers=self.headers)
             response.raise_for_status()
             data = response.json()
+            if not data['response']['songs']:
+                break
             responses.append(data)
             page = data['response'].get('next_page')
         return json.dumps(responses)
